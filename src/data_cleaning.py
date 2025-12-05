@@ -30,8 +30,10 @@ def clean_column_names(df: pd.DataFrame) -> pd.DataFrame:
 # --- Function 3: Handle missing values ---
 def handle_missing_values(df: pd.DataFrame) -> pd.DataFrame:
     """
-    Convert price and qty columns to numeric, coercing errors to NaN,
-    then fill missing values with 0.
+    Convert numeric columns to numbers, coercing errors to NaN,
+    then fill missing or invalid values:
+        - price: fill NaN with 0
+        - qty: fill NaN with 0
     """
     df['price'] = pd.to_numeric(df['price'], errors='coerce').fillna(0)
     df['qty'] = pd.to_numeric(df['qty'], errors='coerce').fillna(0)
@@ -43,20 +45,30 @@ def remove_invalid_rows(df: pd.DataFrame) -> pd.DataFrame:
     Remove rows where numeric values are clearly invalid:
         - price < 0
         - qty < 0
+    Ensures all rows have valid positive numeric data.
     """
     df = df[(df['price'] >= 0) & (df['qty'] >= 0)]
     return df
 
 # --- Function 5: Clean text columns ---
-def clean_text_columns(df: pd.DataFrame):
+def clean_text_columns(df: pd.DataFrame) -> pd.DataFrame:
     """
-    Strip whitespace and extra quotes from string columns like prodname and category.
+    Standardize text columns:
+        - Strip leading/trailing whitespace
+        - Remove extra quotes
+        - Replace multiple spaces with single space
+    Also converts 'date_sold' to datetime.
     """
-    text_cols = ['prodname', 'category', 'date_sold']
+    text_cols = ['prodname', 'category']
     for col in text_cols:
         df.loc[:, col] = df[col].astype(str).str.strip()                   # remove leading/trailing spaces
         df.loc[:, col] = df[col].str.replace('"', '')                      # remove quotes
         df.loc[:, col] = df[col].str.replace(r'\s+', ' ', regex=True)      # replace multiple spaces with single
+
+    # Convert date_sold to datetime, fill missing with forward fill
+    df['date_sold'] = pd.to_datetime(df['date_sold'], errors='coerce')
+    df['date_sold'] = df['date_sold'].fillna(method='ffill')
+
     return df
 
 
@@ -77,10 +89,13 @@ if __name__ == "__main__":
     # Step 4: Remove invalid rows
     df_clean = remove_invalid_rows(df_clean)
 
-    # Step 5: Clean text columns
+    # Step 5: Clean text columns and dates
     df_clean = clean_text_columns(df_clean)
 
-    # Step 6: Save cleaned data
+    # Step 6: Remove exact duplicates
+    df_clean = df_clean.drop_duplicates()
+
+    # Step 7: Save cleaned data
     df_clean.to_csv(cleaned_path, index=False)
 
     print("Cleaning complete. First few rows:")
