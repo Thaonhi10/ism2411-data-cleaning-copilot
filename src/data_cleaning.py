@@ -48,17 +48,17 @@ def remove_invalid_rows(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 # --- Function 5: Clean text columns ---
-def clean_text_columns(df: pd.DataFrame) -> pd.DataFrame:
+def clean_text_columns(df: pd.DataFrame):
     """
     Strip whitespace and extra quotes from string columns like prodname and category.
-    Also normalize multiple spaces to single spaces.
     """
     text_cols = ['prodname', 'category', 'date_sold']
     for col in text_cols:
-        df[col] = df[col].astype(str).str.strip()                    # remove leading/trailing spaces
-        df[col] = df[col].str.replace('"', '')                       # remove quotes
-        df[col] = df[col].str.replace(r'\s+', ' ', regex=True)      # replace multiple spaces with single
+        df.loc[:, col] = df[col].astype(str).str.strip()                   # remove leading/trailing spaces
+        df.loc[:, col] = df[col].str.replace('"', '')                      # remove quotes
+        df.loc[:, col] = df[col].str.replace(r'\s+', ' ', regex=True)      # replace multiple spaces with single
     return df
+
 
 # --- Main block to run the cleaning pipeline ---
 if __name__ == "__main__":
